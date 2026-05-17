@@ -2,10 +2,10 @@
 % Please edit documentation in R/addin.R
 \name{addin_chat_close}
 \alias{addin_chat_close}
-\title{Close the chat panel}
+\title{Close chat panel}
 \usage{
 addin_chat_close()
 }
 \description{
-Close the chat panel
+Close chat panel
 }

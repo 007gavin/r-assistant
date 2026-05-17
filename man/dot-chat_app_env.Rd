@@ -11,7 +11,7 @@ An object of class \code{environment} of length 2.
 .chat_app_env
 }
 \description{
-Interactive chat panel that runs inside RStudio, similar to Posit Assistant.
-Uses async API calls for responsive UI.
+Interactive AI chat panel for RStudio with streaming, context awareness,
+and code actions. Inspired by Roo Code.
 }
 \keyword{datasets}

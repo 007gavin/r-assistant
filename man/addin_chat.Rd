@@ -2,11 +2,10 @@
 % Please edit documentation in R/addin.R
 \name{addin_chat}
 \alias{addin_chat}
-\title{Open the R Assistant chat panel in RStudio}
+\title{Open R Assistant chat in RStudio Viewer pane}
 \usage{
 addin_chat()
 }
 \description{
-Launches an interactive AI chat in the RStudio Viewer pane.
-Runs as a background process so the Console remains free.
+Open R Assistant chat in RStudio Viewer pane
 }

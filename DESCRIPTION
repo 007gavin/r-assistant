@@ -1,6 +1,6 @@
 Package: r.assistant
 Title: AI-Powered Programming Assistant for R
-Version: 0.6.0
+Version: 0.7.0
 Authors@R: 
     person("Gavin", role = c("aut", "cre"),
            email = "gavin@example.com")
