@@ -11,7 +11,6 @@ An object of class \code{environment} of length 2.
 .chat_app_env
 }
 \description{
-Interactive AI chat panel for RStudio with streaming, context awareness,
-and code actions. Inspired by Roo Code.
+RStudio Addins for R Assistant
 }
 \keyword{datasets}
