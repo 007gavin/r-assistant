@@ -93,8 +93,8 @@ assistant_check <- function() {
   }
 
   # Check URL
-  base_url <- if (nzchar(config$base_url)) config$base_url else prov$base_url
-  full_url <- paste0(base_url, prov$chat_path)
+  full_url <- if (nzchar(config$base_url)) config$base_url else paste0(prov$base_url, prov$chat_path)
+  
 
   cat("\nTesting API at:", full_url, "\n")
 

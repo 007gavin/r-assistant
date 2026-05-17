@@ -187,6 +187,7 @@ assistant_set_provider <- function(provider) {
   prov <- PROVIDERS[[provider]]
   config <- assistant_get_config()
   config$provider <- provider
+  config$base_url <- ""  # Clear custom URL, use provider default
   if (nzchar(prov$default_model)) {
     config$model <- prov$default_model
   }

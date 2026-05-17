@@ -67,34 +67,15 @@
   ctx_tokens_est <- round(ctx_chars / 3.5)
   ctx_pct <- round(ctx_tokens_est / max_ctx * 100, 1)
 
-  # Build request
+  # Build request URL - no path manipulation
   provider_name <- config$provider
-  if (provider_name == "custom") {
-    base_url <- config$base_url
-    if (!nzchar(base_url)) {
-      stop("Custom provider requires a base_url. ",
-           "Set it via assistant_config(base_url = '...')")
-    }
-  } else {
-    base_url <- provider_cfg$base_url
-  }
 
-  # Allow override of base_url from config (for any provider)
   if (nzchar(config$base_url %||% "")) {
-    base_url <- config$base_url
-  }
-
-  # Build final URL - prevent double path
-  # If base_url already ends with chat_path, don't append again
-  if (grepl(paste0(provider_cfg$chat_path, "$"), base_url)) {
-    url <- base_url
-  } else if (grepl("/v1$", base_url)) {
-    url <- paste0(base_url, provider_cfg$chat_path)
-  } else if (grepl("/v1/$", base_url)) {
-    url <- paste0(sub("/$", "", base_url), provider_cfg$chat_path)
+    # User set custom base_url - use it EXACTLY as-is
+    url <- config$base_url
   } else {
-    # base_url might be just the domain, append /v1 + chat_path
-    url <- paste0(sub("/$", "", base_url), provider_cfg$chat_path)
+    # Use provider default: base_url + chat_path
+    url <- paste0(provider_cfg$base_url, provider_cfg$chat_path)
   }
 
   body <- build_request_body(
