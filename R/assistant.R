@@ -54,6 +54,19 @@
 
   full_messages <- c(full_messages, messages)
 
+  # Compress if context exceeds limit
+  max_ctx <- get_max_context(config$provider, config$model)
+  # Reserve space for response (max_tokens)
+  ctx_budget <- max_ctx - config$max_tokens - 1000  # 1000 token safety margin
+  if (ctx_budget < 10000) ctx_budget <- 10000
+
+  full_messages <- compress_messages(full_messages, max_tokens = ctx_budget)
+
+  # Calculate context usage
+  ctx_chars <- sum(nchar(vapply(full_messages, function(m) m$content, character(1))))
+  ctx_tokens_est <- round(ctx_chars / 3.5)
+  ctx_pct <- round(ctx_tokens_est / max_ctx * 100, 1)
+
   # Build request
   provider_name <- config$provider
   if (provider_name == "custom") {
@@ -64,6 +77,11 @@
     }
   } else {
     base_url <- provider_cfg$base_url
+  }
+
+  # Allow override of base_url from config (for any provider)
+  if (nzchar(config$base_url %||% "")) {
+    base_url <- config$base_url
   }
 
   url <- paste0(base_url, provider_cfg$chat_path)
@@ -86,19 +104,48 @@
       httr2::req_headers(!!!headers) |>
       httr2::req_body_json(body) |>
       httr2::req_retry(max_tries = 3) |>
-      httr2::req_timeout(120) |>
+      httr2::req_timeout(180) |>
       httr2::req_perform()
 
     if (httr2::resp_is_error(resp)) {
       err_body <- tryCatch(httr2::resp_body_json(resp),
                            error = function(e) httr2::resp_body_string(resp))
-      stop(sprintf("API error (HTTP %s): %s",
-                   httr2::resp_status(resp),
-                   jsonlite::toJSON(err_body, auto_unbox = TRUE)))
+      err_msg <- sprintf("API error (HTTP %s): %s",
+                         httr2::resp_status(resp),
+                         jsonlite::toJSON(err_body, auto_unbox = TRUE))
+      # Add helpful hint for common errors
+      status <- httr2::resp_status(resp)
+      if (status == 400) {
+        err_msg <- paste0(err_msg,
+          "\nHint: Check model name and API URL. ",
+          "Current: model='", config$model, "', url='", url, "'")
+      } else if (status == 401) {
+        err_msg <- paste0(err_msg, "\nHint: API key is invalid or expired.")
+      } else if (status == 429) {
+        err_msg <- paste0(err_msg, "\nHint: Rate limited. Wait and retry.")
+      }
+      stop(err_msg)
     }
 
     resp_json <- httr2::resp_body_json(resp)
     result <- parse_response(provider_name, resp_json)
+
+    # Parse token usage
+    usage <- parse_usage(provider_name, resp_json)
+
+    # Build metadata
+    meta <- list(
+      context_tokens = ctx_tokens_est,
+      context_max = max_ctx,
+      context_pct = ctx_pct,
+      messages_count = length(full_messages),
+      compressed = (ctx_chars / 3.5) > ctx_budget
+    )
+    if (!is.null(usage)) {
+      meta$prompt_tokens <- usage$prompt_tokens
+      meta$completion_tokens <- usage$completion_tokens
+      meta$total_tokens <- usage$total_tokens
+    }
 
     # Save to history
     if (save) {
@@ -108,6 +155,8 @@
       add_to_history("assistant", result)
     }
 
+    # Attach metadata as attribute
+    attr(result, "meta") <- meta
     result
   }, error = function(e) {
     stop("LLM API call failed: ", conditionMessage(e))

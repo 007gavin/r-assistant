@@ -185,6 +185,12 @@ addin_chat_close <- function() {
         shiny::removeUI("#ra-thinking")
         shiny::insertUI("#ra-messages", "beforeEnd",
           ui = .html_assistant_msg(resp))
+        # Show context usage bar
+        meta <- attr(resp, "meta")
+        if (!is.null(meta)) {
+          shiny::insertUI("#ra-messages", "beforeEnd",
+            ui = .html_context_bar(meta))
+        }
         .js_scroll()
       }, error = function(e) {
         shiny::removeUI("#ra-thinking")
@@ -306,6 +312,37 @@ addin_chat_close <- function() {
   shiny::insertUI("body", "beforeEnd",
     ui = shiny::tags$script(shiny::HTML(
       "var el=document.getElementById('ra-messages'); if(el) el.scrollTop=999999;")))
+}
+
+
+# --- Context usage bar ---
+
+.html_context_bar <- function(meta) {
+  pct <- min(meta$context_pct, 100)
+  # Color: green < 50, yellow 50-80, red > 80
+  bar_color <- if (pct > 80) "#f38ba8" else if (pct > 50) "#f9e2af" else "#a6e3a1"
+  compressed_txt <- if (meta$compressed) " [compressed]" else ""
+
+  usage_txt <- ""
+  if (!is.null(meta$prompt_tokens) && meta$prompt_tokens > 0) {
+    usage_txt <- sprintf(" | prompt: %s | response: %s",
+                         format(meta$prompt_tokens, big.mark = ","),
+                         format(meta$completion_tokens, big.mark = ","))
+  }
+
+  shiny::HTML(paste0(
+    '<div class="ra-ctx-bar">',
+      '<div class="ra-ctx-track">',
+        '<div class="ra-ctx-fill" style="width:', pct, '%;background:', bar_color, '"></div>',
+      '</div>',
+      '<div class="ra-ctx-info">',
+        'Context: ', format(meta$context_tokens, big.mark = ","),
+        ' / ', paste0(round(meta$context_max/1000), 'k'),
+        ' (', pct, '%)',
+        usage_txt,
+        compressed_txt,
+      '</div>',
+    '</div>'))
 }
 
 
@@ -627,6 +664,24 @@ addin_chat_close <- function() {
   .ra-model-dot {
     width: 6px; height: 6px; border-radius: 50%;
     background: #a6e3a1;
+  }
+
+  /* Context usage bar */
+  .ra-ctx-bar {
+    padding: 4px 0 12px 0;
+  }
+  .ra-ctx-track {
+    height: 3px; background: #313244;
+    border-radius: 2px; overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .ra-ctx-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  .ra-ctx-info {
+    font-size: 10px; color: #585b70;
+    display: flex; align-items: center; gap: 4px;
   }
   '
 }
