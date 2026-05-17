@@ -10,9 +10,9 @@ addin_chat <- function() {
   if (!requireNamespace("shiny", quietly = TRUE))
     stop("This addin requires the 'shiny' package.")
 
-  if (!is.null(.chat_app_env$process) && .chat_app_env$process$is_alive()) {
-    .chat_app_env$process$kill()
-    Sys.sleep(0.3)
+  if (!is.null(.chat_app_env$port)) {
+    addin_chat_close()
+    Sys.sleep(0.5)
   }
 
   port <- .find_free_port()
@@ -44,11 +44,11 @@ addin_chat <- function() {
   rscript <- file.path(R.home("bin"), "Rscript.exe")
   if (!file.exists(rscript)) rscript <- Sys.which("Rscript")
 
-  # Launch as background process using shell() on Windows
+  # Launch as background process
   if (Sys.info()["sysname"] == "Windows") {
     shell(paste0('start /B "" "', rscript, '" "', script_path, '"'), wait = FALSE)
   } else {
-    system(paste0(rscript, " ", script_path, " &"), wait = FALSE, intern = FALSE)
+    system2(rscript, script_path, wait = FALSE, stdout = FALSE, stderr = FALSE)
   }
   .chat_app_env$port <- port
 
@@ -58,11 +58,6 @@ addin_chat <- function() {
   ready <- FALSE
   for (i in 1:60) {
     Sys.sleep(0.25)
-    # Check if process crashed
-    if (!.chat_app_env$process$is_alive()) {
-      err <- .chat_app_env$process$read_error()
-      stop("[R Assistant] Background process crashed:\n", err)
-    }
     tryCatch({
       con <- url(url, open = "r", timeout = 1)
       close(con)
