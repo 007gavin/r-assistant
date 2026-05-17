@@ -3,386 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>r.assistant v0.2.2 - R AI 编程助手 使用手册</title>
+    <title>r.assistant v0.3.0 - R AI 编程助手 使用手册</title>
     <style>
-        :root {
-            --bg: #1a1b26;
-            --bg-surface: #24283b;
-            --bg-highlight: #2f3549;
-            --text: #c0caf5;
-            --text-muted: #565f89;
-            --accent: #7aa2f7;
-            --accent-light: #89b4fa;
-            --green: #9ece6a;
-            --orange: #ff9e64;
-            --red: #f7768e;
-            --purple: #bb9af7;
-            --cyan: #7dcfff;
-            --yellow: #e0af68;
-            --border: #3b4261;
-            --code-bg: #1f2335;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-            background: var(--bg); color: var(--text);
-            line-height: 1.7; font-size: 15px;
-        }
-        .container { max-width: 960px; margin: 0 auto; padding: 40px 30px; }
-        .header {
-            text-align: center; padding: 60px 0 40px;
-            border-bottom: 1px solid var(--border); margin-bottom: 40px;
-        }
-        .header h1 { font-size: 2.4em; color: var(--accent); margin-bottom: 8px; font-weight: 700; }
-        .header .version {
-            display: inline-block; background: var(--green); color: var(--bg);
-            padding: 2px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-bottom: 12px;
-        }
-        .header p { color: var(--text-muted); font-size: 1.05em; max-width: 600px; margin: 0 auto; }
-        .changelog {
-            background: var(--bg-surface); border: 1px solid var(--border);
-            border-radius: 8px; padding: 16px 20px; margin: 16px auto; max-width: 600px; text-align: left;
-        }
-        .changelog h4 { color: var(--green); margin-bottom: 8px; font-size: 0.9em; }
-        .changelog li { font-size: 0.88em; color: var(--text-muted); margin-bottom: 4px; }
-
-        .toc {
-            background: var(--bg-surface); border: 1px solid var(--border);
-            border-radius: 10px; padding: 24px 30px; margin-bottom: 40px;
-        }
-        .toc h2 { font-size: 0.85em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 14px; }
-        .toc ol { list-style: none; counter-reset: toc; columns: 2; column-gap: 30px; }
-        .toc li { counter-increment: toc; margin-bottom: 6px; }
-        .toc li::before { content: counter(toc) "."; color: var(--accent); font-weight: 600; margin-right: 6px; }
-        .toc a { color: var(--text); text-decoration: none; font-size: 0.95em; }
-        .toc a:hover { color: var(--accent); }
-
-        section { margin-bottom: 48px; }
-        h2 { font-size: 1.5em; color: var(--accent-light); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-        h3 { font-size: 1.1em; color: var(--purple); margin: 20px 0 10px; }
-        p { margin-bottom: 12px; }
-
-        pre {
-            background: var(--code-bg); border: 1px solid var(--border);
-            border-radius: 8px; padding: 16px 20px; overflow-x: auto;
-            margin: 12px 0 18px; font-size: 0.88em; line-height: 1.65;
-        }
-        code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; font-size: 0.9em; }
-        pre code { color: var(--cyan); }
-        .code-comment { color: var(--text-muted); }
-        .code-string { color: var(--green); }
-        .code-func { color: var(--accent); }
-        :not(pre) > code {
-            background: var(--bg-highlight); padding: 2px 7px;
-            border-radius: 4px; color: var(--cyan); font-size: 0.88em;
-        }
-
-        .box { border-radius: 8px; padding: 16px 20px; margin: 16px 0; border-left: 4px solid; }
-        .box-info { background: rgba(122,162,247,0.08); border-color: var(--accent); }
-        .box-warn { background: rgba(255,158,100,0.08); border-color: var(--orange); }
-        .box-success { background: rgba(158,206,106,0.08); border-color: var(--green); }
-        .box-title { font-weight: 600; margin-bottom: 4px; font-size: 0.92em; }
-        .box-info .box-title { color: var(--accent); }
-        .box-warn .box-title { color: var(--orange); }
-        .box-success .box-title { color: var(--green); }
-
-        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92em; }
-        th { background: var(--bg-highlight); text-align: left; padding: 10px 14px; color: var(--accent-light); font-weight: 600; border-bottom: 2px solid var(--border); }
-        td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
-        tr:hover td { background: rgba(122,162,247,0.04); }
-
-        .tag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
-        .tag-addin { background: rgba(187,154,247,0.15); color: var(--purple); }
-        .tag-func { background: rgba(122,162,247,0.15); color: var(--accent); }
-        .tag-cli { background: rgba(158,206,106,0.15); color: var(--green); }
-        .tag-new { background: rgba(255,158,100,0.15); color: var(--orange); }
-
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
-        .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
-        .card h4 { color: var(--accent-light); margin-bottom: 8px; font-size: 0.95em; }
-        .card p { font-size: 0.9em; color: var(--text-muted); margin-bottom: 0; }
-
-        .footer { text-align: center; padding: 30px 0; border-top: 1px solid var(--border); margin-top: 40px; color: var(--text-muted); font-size: 0.85em; }
-
-        @media (max-width: 640px) {
-            .container { padding: 20px 16px; }
-            .toc ol { columns: 1; }
-            .grid { grid-template-columns: 1fr; }
-            .header h1 { font-size: 1.8em; }
-        }
+        :root{--bg:#1a1b26;--bg2:#24283b;--bg3:#2f3549;--text:#c0caf5;--muted:#565f89;--accent:#7aa2f7;--accent2:#89b4fa;--green:#9ece6a;--orange:#ff9e64;--red:#f7768e;--purple:#bb9af7;--cyan:#7dcfff;--yellow:#e0af68;--border:#3b4261;--code:#1f2335}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+        .c{max-width:960px;margin:0 auto;padding:40px 30px}
+        .hdr{text-align:center;padding:60px 0 40px;border-bottom:1px solid var(--border);margin-bottom:40px}
+        .hdr h1{font-size:2.4em;color:var(--accent);margin-bottom:8px}
+        .ver{display:inline-block;background:var(--green);color:var(--bg);padding:2px 10px;border-radius:12px;font-size:.75em;font-weight:600;margin-bottom:12px}
+        .hdr p{color:var(--muted);font-size:1.05em;max-width:600px;margin:0 auto}
+        .log{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:16px auto;max-width:600px;text-align:left}
+        .log h4{color:var(--green);margin-bottom:8px;font-size:.9em}
+        .log li{font-size:.88em;color:var(--muted);margin-bottom:4px}
+        .toc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px 30px;margin-bottom:40px}
+        .toc h2{font-size:.85em;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px}
+        .toc ol{list-style:none;counter-reset:toc;columns:2;column-gap:30px}
+        .toc li{counter-increment:toc;margin-bottom:6px}
+        .toc li::before{content:counter(toc)".";color:var(--accent);font-weight:600;margin-right:6px}
+        .toc a{color:var(--text);text-decoration:none;font-size:.95em}
+        .toc a:hover{color:var(--accent)}
+        section{margin-bottom:48px}
+        h2{font-size:1.5em;color:var(--accent2);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+        h3{font-size:1.1em;color:var(--purple);margin:20px 0 10px}
+        p{margin-bottom:12px}
+        pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:12px 0 18px;font-size:.88em;line-height:1.65}
+        code{font-family:"JetBrains Mono","Fira Code",Consolas,monospace;font-size:.9em}
+        pre code{color:var(--cyan)}
+        .cc{color:var(--muted)}.cs{color:var(--green)}.cf{color:var(--accent)}
+        :not(pre)>code{background:var(--bg3);padding:2px 7px;border-radius:4px;color:var(--cyan);font-size:.88em}
+        .box{border-radius:8px;padding:16px 20px;margin:16px 0;border-left:4px solid}
+        .bi{background:rgba(122,162,247,.08);border-color:var(--accent)}
+        .bw{background:rgba(255,158,100,.08);border-color:var(--orange)}
+        .bs{background:rgba(158,206,106,.08);border-color:var(--green)}
+        .bt{font-weight:600;margin-bottom:4px;font-size:.92em}
+        .bi .bt{color:var(--accent)}.bw .bt{color:var(--orange)}.bs .bt{color:var(--green)}
+        table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92em}
+        th{background:var(--bg3);text-align:left;padding:10px 14px;color:var(--accent2);font-weight:600;border-bottom:2px solid var(--border)}
+        td{padding:10px 14px;border-bottom:1px solid var(--border)}
+        tr:hover td{background:rgba(122,162,247,.04)}
+        .tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.8em;font-weight:600}
+        .ta{background:rgba(187,154,247,.15);color:var(--purple)}
+        .tf{background:rgba(122,162,247,.15);color:var(--accent)}
+        .tc{background:rgba(158,206,106,.15);color:var(--green)}
+        .tn{background:rgba(255,158,100,.15);color:var(--orange)}
+        .g{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+        .cd{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px}
+        .cd h4{color:var(--accent2);margin-bottom:8px;font-size:.95em}
+        .cd p{font-size:.9em;color:var(--muted);margin-bottom:0}
+        .ft{text-align:center;padding:30px 0;border-top:1px solid var(--border);margin-top:40px;color:var(--muted);font-size:.85em}
+        @media(max-width:640px){.c{padding:20px 16px}.toc ol{columns:1}.g{grid-template-columns:1fr}.hdr h1{font-size:1.8em}}
     </style>
 </head>
 <body>
-<div class="container">
+<div class="c">
 
-<div class="header">
+<div class="hdr">
     <h1>r.assistant</h1>
-    <span class="version">v0.2.2</span>
+    <span class="ver">v0.3.0</span>
     <p>R AI 编程助手 - 在 RStudio Viewer 面板中运行的 AI 辅助编程工具</p>
-    <div class="changelog">
-        <h4>v0.2.2 Changelog</h4>
+    <div class="log">
+        <h4>v0.3.0 Changelog</h4>
         <ul>
-            <li>Chat runs in background process - Console completely free</li>
-            <li>Opens in RStudio Viewer pane (alongside Files/Plots/Help)</li>
-            <li>Dark theme matching RStudio IDE</li>
-            <li>Enter to send, Shift+Enter for newline</li>
-            <li>Insert code into editor with one click</li>
+            <li><strong>Model selector</strong> - switch models directly from chat header dropdown</li>
+            <li><strong>History viewer</strong> - view conversation history with clock icon</li>
+            <li>New functions: <code>assistant_list_models()</code>, <code>assistant_select_model()</code></li>
+            <li>Background process chat (Console free)</li>
+            <li>Viewer pane display</li>
         </ul>
     </div>
 </div>
 
-<nav class="toc">
-    <h2>目录</h2>
-    <ol>
-        <li><a href="#install">安装</a></li>
-        <li><a href="#config">配置 API</a></li>
-        <li><a href="#providers">支持的提供商</a></li>
-        <li><a href="#chat">对话问答</a></li>
-        <li><a href="#viewer">Viewer 面板聊天</a></li>
-        <li><a href="#explain">代码解释</a></li>
-        <li><a href="#refactor">代码重构</a></li>
-        <li><a href="#fix">错误修复</a></li>
-        <li><a href="#codegen">代码与文档生成</a></li>
-        <li><a href="#addin">RStudio Addin</a></li>
-        <li><a href="#context">上下文感知</a></li>
-        <li><a href="#history">对话历史</a></li>
-        <li><a href="#ref">函数速查表</a></li>
-    </ol>
-</nav>
+<nav class="toc"><h2>目录</h2><ol>
+    <li><a href="#install">安装</a></li>
+    <li><a href="#config">配置 API</a></li>
+    <li><a href="#providers">支持的提供商</a></li>
+    <li><a href="#models">模型选择</a></li>
+    <li><a href="#chat">对话问答</a></li>
+    <li><a href="#viewer">Viewer 面板聊天</a></li>
+    <li><a href="#history">历史记录</a></li>
+    <li><a href="#explain">代码解释</a></li>
+    <li><a href="#refactor">代码重构</a></li>
+    <li><a href="#fix">错误修复</a></li>
+    <li><a href="#codegen">代码与文档生成</a></li>
+    <li><a href="#addin">RStudio Addin</a></li>
+    <li><a href="#context">上下文感知</a></li>
+    <li><a href="#ref">函数速查表</a></li>
+</ol></nav>
 
-<!-- 1. INSTALL -->
-<section id="install">
-    <h2>1. 安装</h2>
-<pre><code><span class="code-comment"># 从本地安装</span>
-<span class="code-func">install.packages</span>(<span class="code-string">"D:/r-assistant/r.assistant_0.2.2.tar.gz"</span>,
-                 repos = <span class="code-keyword">NULL</span>, type = <span class="code-string">"source"</span>)
-
-<span class="code-comment"># 或从 GitHub 安装</span>
-<span class="code-comment"># install.packages("remotes")</span>
-<span class="code-comment"># remotes::install_github("0101123/r-assistant")</span></code></pre>
-    <div class="box box-info">
-        <div class="box-title">依赖包</div>
-        <p>自动安装：<code>httr2</code>、<code>jsonlite</code>、<code>rstudioapi</code>、<code>miniUI</code>、<code>shiny</code>、<code>clipr</code>、<code>processx</code></p>
-    </div>
+<section id="install"><h2>1. 安装</h2>
+<h3>从 GitHub 安装（推荐）</h3>
+<pre><code><span class="cf">install.packages</span>(<span class="cs">"remotes"</span>)
+remotes::<span class="cf">install_github</span>(<span class="cs">"007gavin/r-assistant"</span>)</code></pre>
+<h3>从本地安装</h3>
+<pre><code><span class="cf">install.packages</span>(<span class="cs">"D:/r-assistant/r.assistant_0.3.0.tar.gz"</span>,
+                 repos = <span class="cs">NULL</span>, type = <span class="cs">"source"</span>)</code></pre>
+<div class="box bi"><div class="bt">依赖包</div><p>自动安装：<code>httr2</code> <code>jsonlite</code> <code>rstudioapi</code> <code>shiny</code> <code>miniUI</code> <code>clipr</code> <code>processx</code></p></div>
 </section>
 
-<!-- 2. CONFIG -->
-<section id="config">
-    <h2>2. 配置 API</h2>
-<pre><code><span class="code-func">library</span>(r.assistant)
-
-<span class="code-comment"># 一步到位</span>
-<span class="code-func">assistant_config</span>(provider = <span class="code-string">"deepseek"</span>, api_key = <span class="code-string">"sk-xxx"</span>)
-
-<span class="code-comment"># 或分别设置</span>
-<span class="code-func">assistant_set_provider</span>(<span class="code-string">"deepseek"</span>)
-<span class="code-func">assistant_set_key</span>(<span class="code-string">"sk-xxx"</span>)
-
-<span class="code-comment"># 查看当前配置</span>
-<span class="code-func">assistant_get_config</span>()</code></pre>
-    <div class="box box-warn">
-        <div class="box-title">API Key 存储</div>
-        <p>保存在本地 <code>~/.r-assistant/config.json</code>，不会上传。</p>
-    </div>
+<section id="config"><h2>2. 配置 API</h2>
+<pre><code><span class="cf">library</span>(r.assistant)
+<span class="cf">assistant_config</span>(provider = <span class="cs">"deepseek"</span>, api_key = <span class="cs">"sk-xxx"</span>)
+<span class="cf">assistant_get_config</span>()  <span class="cc"># 查看配置</span></code></pre>
+<div class="box bw"><div class="bt">API Key</div><p>保存在本地 <code>~/.r-assistant/config.json</code></p></div>
 </section>
 
-<!-- 3. PROVIDERS -->
-<section id="providers">
-    <h2>3. 支持的 LLM 提供商</h2>
-    <table>
-        <thead><tr><th>提供商</th><th>默认模型</th><th>说明</th></tr></thead>
-        <tbody>
-            <tr><td><code>deepseek</code></td><td>deepseek-chat</td><td>国内直连，推荐</td></tr>
-            <tr><td><code>openai</code></td><td>gpt-4o-mini</td><td>ChatGPT 系列</td></tr>
-            <tr><td><code>anthropic</code></td><td>claude-sonnet-4</td><td>Claude 系列</td></tr>
-            <tr><td><code>openrouter</code></td><td>deepseek/deepseek-chat</td><td>一个 Key 多种模型</td></tr>
-            <tr><td><code>custom</code></td><td>自定义</td><td>任何 OpenAI 兼容 API</td></tr>
-        </tbody>
-    </table>
+<section id="providers"><h2>3. 支持的 LLM 提供商</h2>
+<table><thead><tr><th>提供商</th><th>默认模型</th><th>说明</th></tr></thead><tbody>
+<tr><td><code>deepseek</code></td><td>deepseek-chat</td><td>国内直连</td></tr>
+<tr><td><code>openai</code></td><td>gpt-4o-mini</td><td>ChatGPT</td></tr>
+<tr><td><code>anthropic</code></td><td>claude-sonnet-4</td><td>Claude</td></tr>
+<tr><td><code>openrouter</code></td><td>deepseek/deepseek-chat</td><td>多模型</td></tr>
+<tr><td><code>custom</code></td><td>自定义</td><td>OpenAI 兼容</td></tr>
+</tbody></table>
 </section>
 
-<!-- 4. CHAT -->
-<section id="chat">
-    <h2>4. 对话问答</h2>
-<pre><code><span class="code-comment"># 多轮对话（保留上下文）</span>
-<span class="code-func">assistant_chat</span>(<span class="code-string">"如何用 ggplot2 画箱线图？"</span>)
-<span class="code-func">assistant_chat</span>(<span class="code-string">"再加上颜色分组"</span>)       <span class="code-comment"># 自动保留上文</span>
+<section id="models"><h2>4. 模型选择</h2>
+<pre><code><span class="cc"># 查看当前提供商的可用模型</span>
+<span class="cf">assistant_list_models</span>()
+<span class="cf">assistant_list_models</span>(<span class="cs">"openai"</span>)    <span class="cc"># 指定提供商</span>
 
-<span class="code-comment"># 快速提问（一次性，不保留历史）</span>
-<span class="code-func">assistant_ask</span>(<span class="code-string">"lapply 和 sapply 的区别？"</span>)</code></pre>
+<span class="cc"># 交互式选择模型（弹出选择界面）</span>
+<span class="cf">assistant_select_model</span>()
+
+<span class="cc"># 命令行直接切换</span>
+<span class="cf">assistant_set_model</span>(<span class="cs">"deepseek-coder"</span>)
+<span class="cf">assistant_set_model</span>(<span class="cs">"gpt-4o"</span>)</code></pre>
+<div class="box bs"><div class="bt">Viewer 面板中切换</div><p>聊天面板顶部有模型下拉选择器，点击即可切换，无需输入命令。</p></div>
 </section>
 
-<!-- 5. VIEWER -->
-<section id="viewer">
-    <h2>5. Viewer 面板聊天</h2>
-    <div class="box box-success">
-        <div class="box-title">v0.2.2 新特性</div>
-        <p>Chat 运行在后台进程中，<strong>Console 完全空闲</strong>，可以同时写代码和聊天。界面显示在 RStudio Viewer 面板中。</p>
-    </div>
-
-<pre><code><span class="code-comment"># 打开 Viewer 面板聊天</span>
-<span class="code-func">addin_chat</span>()
-
-<span class="code-comment"># 关闭聊天（释放后台进程）</span>
-<span class="code-func">addin_chat_close</span>()</code></pre>
-
-    <h3>使用方式</h3>
-    <ol>
-        <li>执行 <code>addin_chat()</code> 或点击 Addins -> R Assistant Chat</li>
-        <li>聊天面板出现在 Viewer 面板位置（右下角，和 Files/Plots 同级）</li>
-        <li>可以拖拽 Viewer 标签到左侧面板区域</li>
-        <li>Console 完全空闲，可以正常输入 R 代码</li>
-        <li>输入框中 Enter 发送，Shift+Enter 换行</li>
-    </ol>
-
-    <h3>面板功能</h3>
-    <div class="grid">
-        <div class="card">
-            <h4>+ 新对话</h4>
-            <p>清空聊天历史，开始新的对话</p>
-        </div>
-        <div class="card">
-            <h4>Insert Code</h4>
-            <p>将 AI 回复中的代码块插入到编辑器中</p>
-        </div>
-        <div class="card">
-            <h4>上下文感知</h4>
-            <p>自动包含当前 R 会话的包、变量、选中代码</p>
-        </div>
-        <div class="card">
-            <h4>模型指示器</h4>
-            <p>底部显示当前使用的 LLM 模型名称</p>
-        </div>
-    </div>
+<section id="chat"><h2>5. 对话问答</h2>
+<pre><code><span class="cf">assistant_chat</span>(<span class="cs">"如何画箱线图？"</span>)   <span class="cc"># 多轮对话</span>
+<span class="cf">assistant_chat</span>(<span class="cs">"加上颜色分组"</span>)     <span class="cc"># 保留上下文</span>
+<span class="cf">assistant_ask</span>(<span class="cs">"lapply vs sapply?"</span>) <span class="cc"># 一次性</span></code></pre>
 </section>
 
-<!-- 6. EXPLAIN -->
-<section id="explain">
-    <h2>6. 代码解释</h2>
-<pre><code><span class="code-func">assistant_explain</span>(<span class="code-string">"mtcars %>% group_by(cyl) %>% summarise_all(mean)"</span>)
-
-<span class="code-comment"># 或在 RStudio 中选中代码后运行</span>
-<span class="code-func">assistant_explain</span>()
-
-<span class="code-comment"># 控制详细程度</span>
-<span class="code-func">assistant_explain</span>(code, detail_level = <span class="code-string">"brief"</span>)     <span class="code-comment"># 简要</span>
-<span class="code-func">assistant_explain</span>(code, detail_level = <span class="code-string">"detailed"</span>)  <span class="code-comment"># 详细</span></code></pre>
+<section id="viewer"><h2>6. Viewer 面板聊天</h2>
+<pre><code><span class="cf">addin_chat</span>()          <span class="cc"># 打开聊天面板</span>
+<span class="cf">addin_chat_close</span>()    <span class="cc"># 关闭</span></code></pre>
+<div class="g">
+    <div class="cd"><h4>模型选择器</h4><p>顶部下拉框，点击切换 LLM 模型</p></div>
+    <div class="cd"><h4>历史按钮</h4><p>时钟图标，查看对话历史</p></div>
+    <div class="cd"><h4>新对话</h4><p>+ 按钮，清空并开始新对话</p></div>
+    <div class="cd"><h4>插入代码</h4><p>文件图标，将 AI 代码插入编辑器</p></div>
+</div>
 </section>
 
-<!-- 7. REFACTOR -->
-<section id="refactor">
-    <h2>7. 代码重构</h2>
-<pre><code><span class="code-func">assistant_refactor</span>(
-  <span class="code-string">"for(i in 1:nrow(df)) { df$x[i] <- df$y[i] * 2 }"</span>,
-  style = <span class="code-string">"tidyverse"</span>,  <span class="code-comment"># "base" / "data.table"</span>
-  goal  = <span class="code-string">"readability"</span>  <span class="code-comment"># "performance" / "conciseness"</span>
-)</code></pre>
+<section id="history"><h2>7. 历史记录</h2>
+<pre><code><span class="cf">assistant_history</span>(n = 10)        <span class="cc"># 最近 10 条</span>
+<span class="cf">assistant_history</span>(as_messages = FALSE) <span class="cc"># 带时间戳</span>
+<span class="cf">assistant_clear_history</span>()       <span class="cc"># 清空</span></code></pre>
+<p>在 Viewer 聊天面板中，点击右上角时钟图标可直接查看历史，无需输入命令。</p>
 </section>
 
-<!-- 8. FIX -->
-<section id="fix">
-    <h2>8. 错误修复</h2>
-<pre><code><span class="code-comment"># 选中报错的代码后运行（自动读取最后一条错误）</span>
-<span class="code-func">assistant_fix</span>()
-
-<span class="code-comment"># 手动指定</span>
-<span class="code-func">assistant_fix</span>(code = <span class="code-string">"df %>% filter(x = 5)"</span>,
-             error = <span class="code-string">"could not find function '%>%'"</span>)</code></pre>
+<section id="explain"><h2>8. 代码解释</h2>
+<pre><code><span class="cf">assistant_explain</span>(code, detail_level = <span class="cs">"normal"</span>)
+<span class="cc"># "brief" | "normal" | "detailed"</span></code></pre>
 </section>
 
-<!-- 9. CODEGEN -->
-<section id="codegen">
-    <h2>9. 代码与文档生成</h2>
-<pre><code><span class="code-comment"># 从描述生成代码</span>
-<span class="code-func">assistant_complete</span>(<span class="code-string">"创建一个函数，返回正态性检验结果"</span>)
-
-<span class="code-comment"># 生成 roxygen2 文档</span>
-<span class="code-func">assistant_document</span>(<span class="code-string">"my_func <- function(x, y) { x + y }"</span>)
-
-<span class="code-comment"># 生成单元测试</span>
-<span class="code-func">assistant_test</span>(<span class="code-string">"add <- function(a, b) a + b"</span>)</code></pre>
+<section id="refactor"><h2>9. 代码重构</h2>
+<pre><code><span class="cf">assistant_refactor</span>(code, style = <span class="cs">"tidyverse"</span>, goal = <span class="cs">"readability"</span>)
+<span class="cc"># style: "tidyverse" | "base" | "data.table"</span>
+<span class="cc"># goal:  "readability" | "performance" | "conciseness"</span></code></pre>
 </section>
 
-<!-- 10. ADDIN -->
-<section id="addin">
-    <h2>10. RStudio Addin</h2>
-    <table>
-        <thead><tr><th>Addin 名称</th><th>对应函数</th><th>功能</th></tr></thead>
-        <tbody>
-            <tr><td>R Assistant Chat</td><td><code>addin_chat()</code></td><td>Viewer 面板聊天 <span class="tag tag-new">NEW</span></td></tr>
-            <tr><td>Explain Code</td><td><code>addin_explain()</code></td><td>解释选中代码</td></tr>
-            <tr><td>Refactor Code</td><td><code>addin_refactor()</code></td><td>重构选中代码</td></tr>
-            <tr><td>Fix Code</td><td><code>addin_fix()</code></td><td>修复选中代码错误</td></tr>
-            <tr><td>Generate Docs</td><td><code>addin_document()</code></td><td>生成文档</td></tr>
-        </tbody>
-    </table>
-    <div class="box box-success">
-        <div class="box-title">快捷键设置</div>
-        <p><strong>Tools -> Modify Keyboard Shortcuts</strong> 搜索 "R Assistant"</p>
-        <p>推荐：<code>R Assistant Chat</code> -> <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd></p>
-    </div>
+<section id="fix"><h2>10. 错误修复</h2>
+<pre><code><span class="cf">assistant_fix</span>()                         <span class="cc"># 自动读取选中代码+错误</span>
+<span class="cf">assistant_fix</span>(code, error)              <span class="cc"># 手动指定</span></code></pre>
 </section>
 
-<!-- 11. CONTEXT -->
-<section id="context">
-    <h2>11. 上下文感知</h2>
-    <table>
-        <thead><tr><th>上下文</th><th>内容</th><th>控制参数</th></tr></thead>
-        <tbody>
-            <tr><td>会话信息</td><td>R 版本、OS、工作目录</td><td>始终包含</td></tr>
-            <tr><td>已加载包</td><td>R 包列表</td><td><code>include_session</code></td></tr>
-            <tr><td>全局变量</td><td>变量名、类型、维度</td><td><code>include_env</code></td></tr>
-            <tr><td>当前文档</td><td>打开的文件内容</td><td><code>include_document</code></td></tr>
-            <tr><td>选中代码</td><td>编辑器中选中的文本</td><td><code>include_selection</code></td></tr>
-        </tbody>
-    </table>
-<pre><code><span class="code-func">assistant_context</span>()                     <span class="code-comment"># 查看当前上下文</span>
-<span class="code-func">assistant_config</span>(context_enabled = <span class="code-keyword">FALSE</span>) <span class="code-comment"># 关闭上下文</span></code></pre>
+<section id="codegen"><h2>11. 代码与文档生成</h2>
+<pre><code><span class="cf">assistant_complete</span>(<span class="cs">"创建正态性检验函数"</span>)
+<span class="cf">assistant_document</span>(<span class="cs">"my_func <- function(x) x"</span>)
+<span class="cf">assistant_test</span>(<span class="cs">"add <- function(a, b) a + b"</span>)</code></pre>
 </section>
 
-<!-- 12. HISTORY -->
-<section id="history">
-    <h2>12. 对话历史</h2>
-<pre><code><span class="code-func">assistant_history</span>(n = 5)         <span class="code-comment"># 最近 5 条</span>
-<span class="code-func">assistant_clear_history</span>()       <span class="code-comment"># 清空历史</span></code></pre>
-    <p>保存在 <code>~/.r-assistant/history.json</code>，默认最多 50 条。</p>
+<section id="addin"><h2>12. RStudio Addin</h2>
+<table><thead><tr><th>Addin</th><th>函数</th><th>功能</th></tr></thead><tbody>
+<tr><td>R Assistant Chat</td><td><code>addin_chat()</code></td><td>Viewer 聊天 <span class="tag tn">NEW</span></td></tr>
+<tr><td>Explain Code</td><td><code>addin_explain()</code></td><td>解释代码</td></tr>
+<tr><td>Refactor Code</td><td><code>addin_refactor()</code></td><td>重构代码</td></tr>
+<tr><td>Fix Code</td><td><code>addin_fix()</code></td><td>修复错误</td></tr>
+<tr><td>Generate Docs</td><td><code>addin_document()</code></td><td>生成文档</td></tr>
+</tbody></table>
 </section>
 
-<!-- 13. REFERENCE -->
-<section id="ref">
-    <h2>13. 函数速查表</h2>
-    <table>
-        <thead><tr><th>函数</th><th>说明</th><th>类型</th></tr></thead>
-        <tbody>
-            <tr><td><code>addin_chat()</code></td><td>Viewer 面板聊天</td><td><span class="tag tag-addin">Addin</span> <span class="tag tag-new">NEW</span></td></tr>
-            <tr><td><code>addin_chat_close()</code></td><td>关闭聊天</td><td><span class="tag tag-addin">Addin</span> <span class="tag tag-new">NEW</span></td></tr>
-            <tr><td><code>addin_explain()</code></td><td>解释代码 Addin</td><td><span class="tag tag-addin">Addin</span></td></tr>
-            <tr><td><code>addin_refactor()</code></td><td>重构代码 Addin</td><td><span class="tag tag-addin">Addin</span></td></tr>
-            <tr><td><code>addin_fix()</code></td><td>修复错误 Addin</td><td><span class="tag tag-addin">Addin</span></td></tr>
-            <tr><td><code>addin_document()</code></td><td>生成文档 Addin</td><td><span class="tag tag-addin">Addin</span></td></tr>
-            <tr><td><code>assistant_chat(msg)</code></td><td>多轮对话</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_ask(q)</code></td><td>一次性提问</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_explain(code)</code></td><td>解释代码</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_refactor(code)</code></td><td>重构代码</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_fix(code, error)</code></td><td>修复错误</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_document(code)</code></td><td>生成文档</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_complete(desc)</code></td><td>生成代码</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_test(code)</code></td><td>生成测试</td><td><span class="tag tag-func">函数</span></td></tr>
-            <tr><td><code>assistant_config(...)</code></td><td>配置 API</td><td><span class="tag tag-cli">配置</span></td></tr>
-            <tr><td><code>assistant_set_key(key)</code></td><td>设置 Key</td><td><span class="tag tag-cli">配置</span></td></tr>
-            <tr><td><code>assistant_set_model(m)</code></td><td>切换模型</td><td><span class="tag tag-cli">配置</span></td></tr>
-            <tr><td><code>assistant_set_provider(p)</code></td><td>切换提供商</td><td><span class="tag tag-cli">配置</span></td></tr>
-            <tr><td><code>assistant_get_config()</code></td><td>查看配置</td><td><span class="tag tag-cli">配置</span></td></tr>
-            <tr><td><code>assistant_context()</code></td><td>查看上下文</td><td><span class="tag tag-cli">工具</span></td></tr>
-            <tr><td><code>assistant_history(n)</code></td><td>查看历史</td><td><span class="tag tag-cli">工具</span></td></tr>
-            <tr><td><code>assistant_clear_history()</code></td><td>清空历史</td><td><span class="tag tag-cli">工具</span></td></tr>
-        </tbody>
-    </table>
+<section id="context"><h2>13. 上下文感知</h2>
+<table><thead><tr><th>上下文</th><th>内容</th></tr></thead><tbody>
+<tr><td>会话信息</td><td>R 版本、OS、工作目录</td></tr>
+<tr><td>已加载包</td><td>R 包列表</td></tr>
+<tr><td>全局变量</td><td>变量名、类型、维度</td></tr>
+<tr><td>当前文档</td><td>打开的文件内容</td></tr>
+<tr><td>选中代码</td><td>编辑器中选中的文本</td></tr>
+</tbody></table>
 </section>
 
-<div class="footer">
-    <p>r.assistant v0.2.2 &middot; MIT License &middot; D:/r-assistant/</p>
-    <p>GitHub: <a href="https://github.com/0101123/r-assistant" style="color:var(--accent)">github.com/0101123/r-assistant</a></p>
+<section id="ref"><h2>14. 函数速查表</h2>
+<table><thead><tr><th>函数</th><th>说明</th><th>类型</th></tr></thead><tbody>
+<tr><td><code>addin_chat()</code></td><td>Viewer 面板聊天</td><td><span class="tag ta">Addin</span> <span class="tag tn">NEW</span></td></tr>
+<tr><td><code>addin_chat_close()</code></td><td>关闭聊天</td><td><span class="tag ta">Addin</span></td></tr>
+<tr><td><code>addin_explain()</code></td><td>解释代码</td><td><span class="tag ta">Addin</span></td></tr>
+<tr><td><code>addin_refactor()</code></td><td>重构代码</td><td><span class="tag ta">Addin</span></td></tr>
+<tr><td><code>addin_fix()</code></td><td>修复错误</td><td><span class="tag ta">Addin</span></td></tr>
+<tr><td><code>addin_document()</code></td><td>生成文档</td><td><span class="tag ta">Addin</span></td></tr>
+<tr><td><code>assistant_chat(msg)</code></td><td>多轮对话</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_ask(q)</code></td><td>一次性提问</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_explain(code)</code></td><td>解释代码</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_refactor(code)</code></td><td>重构代码</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_fix(code, error)</code></td><td>修复错误</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_document(code)</code></td><td>生成文档</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_complete(desc)</code></td><td>生成代码</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_test(code)</code></td><td>生成测试</td><td><span class="tag tf">函数</span></td></tr>
+<tr><td><code>assistant_list_models()</code></td><td>查看可用模型</td><td><span class="tag tc">工具</span> <span class="tag tn">NEW</span></td></tr>
+<tr><td><code>assistant_select_model()</code></td><td>交互式选模型</td><td><span class="tag tc">工具</span> <span class="tag tn">NEW</span></td></tr>
+<tr><td><code>assistant_config(...)</code></td><td>配置 API</td><td><span class="tag tc">配置</span></td></tr>
+<tr><td><code>assistant_set_key(key)</code></td><td>设置 Key</td><td><span class="tag tc">配置</span></td></tr>
+<tr><td><code>assistant_set_model(m)</code></td><td>切换模型</td><td><span class="tag tc">配置</span></td></tr>
+<tr><td><code>assistant_set_provider(p)</code></td><td>切换提供商</td><td><span class="tag tc">配置</span></td></tr>
+<tr><td><code>assistant_get_config()</code></td><td>查看配置</td><td><span class="tag tc">配置</span></td></tr>
+<tr><td><code>assistant_context()</code></td><td>查看上下文</td><td><span class="tag tc">工具</span></td></tr>
+<tr><td><code>assistant_history(n)</code></td><td>查看历史</td><td><span class="tag tc">工具</span></td></tr>
+<tr><td><code>assistant_clear_history()</code></td><td>清空历史</td><td><span class="tag tc">工具</span></td></tr>
+</tbody></table>
+</section>
+
+<div class="ft">
+    <p>r.assistant v0.3.0 &middot; MIT License</p>
+    <p>GitHub: <a href="https://github.com/007gavin/r-assistant" style="color:var(--accent)">github.com/007gavin/r-assistant</a></p>
 </div>
 
 </div>

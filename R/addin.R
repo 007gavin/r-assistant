@@ -146,7 +146,7 @@ addin_chat_close <- function() {
       ")),
       shiny::tags$style(shiny::HTML(.chat_css()))
     ),
-    shiny::HTML(.chat_html(config$model, init_sel))
+    shiny::HTML(.chat_html(config$model, init_sel, config$provider))
   )
 }
 
@@ -225,6 +225,23 @@ addin_chat_close <- function() {
         }
       }
     })
+
+    # Model change handler
+    shiny::observeEvent(input$ra_model_change, {
+      new_model <- input$ra_model_change
+      if (!is.null(new_model) && nzchar(new_model)) {
+        assistant_set_model(new_model)
+        message("[R Assistant] Model changed to: ", new_model)
+      }
+    })
+
+    # History panel handler
+    shiny::observeEvent(input$ra_btn_history, {
+      # Remove existing history panel if open
+      shiny::removeUI("#ra-history-panel", multiple = TRUE)
+      # Insert history panel
+      shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_history_panel())
+    })
   }
 }
 
@@ -292,6 +309,71 @@ addin_chat_close <- function() {
 }
 
 
+# --- Model selector HTML ---
+
+.html_model_options <- function(provider, current_model) {
+  models <- PROVIDERS[[provider]]$models
+  if (length(models) == 0) {
+    return(shiny::HTML(paste0('<option value="', current_model, '">',
+                              current_model, '</option>')))
+  }
+  opts <- vapply(models, function(m) {
+    sel <- if (m == current_model) " selected" else ""
+    paste0('<option value="', m, '"', sel, '>', m, '</option>')
+  }, character(1))
+  shiny::HTML(paste(opts, collapse = "\n"))
+}
+
+
+# --- History panel HTML ---
+
+.html_history_panel <- function() {
+  hist <- assistant_history(n = 30, as_messages = FALSE)
+  if (length(hist) == 0) {
+    return(shiny::HTML('
+      <div class="ra-history-overlay" id="ra-history-panel">
+        <div class="ra-history-header">
+          <h4>Conversation History</h4>
+          <button class="ra-history-close" onclick="document.getElementById(\'ra-history-panel\').remove()">&times;</button>
+        </div>
+        <div class="ra-history-empty">No conversation history yet.</div>
+      </div>'))
+  }
+
+  items <- vapply(hist, function(msg) {
+    role <- msg$role
+    role_cls <- if (role == "assistant") "assistant" else ""
+    role_label <- toupper(role)
+    ts <- if (!is.null(msg$timestamp)) {
+      format(as.POSIXct(msg$timestamp), "%H:%M:%S")
+    } else {
+      ""
+    }
+    # Truncate content for display
+    txt <- msg$content
+    if (nchar(txt) > 200) txt <- paste0(substr(txt, 1, 200), "...")
+    txt <- gsub("<", "&lt;", txt, fixed = TRUE)
+    txt <- gsub(">", "&gt;", txt, fixed = TRUE)
+    txt <- gsub("\n", " ", txt, fixed = TRUE)
+
+    paste0('<div class="ra-history-item">',
+           '<span class="ra-hist-role ', role_cls, '">', role_label, '</span>',
+           '<span class="ra-hist-time">', ts, '</span>',
+           '<div class="ra-hist-text">', txt, '</div>',
+           '</div>')
+  }, character(1))
+
+  shiny::HTML(paste0(
+    '<div class="ra-history-overlay" id="ra-history-panel">',
+    '<div class="ra-history-header">',
+    '<h4>Conversation History (', length(hist), ' messages)</h4>',
+    '<button class="ra-history-close" onclick="document.getElementById(\'ra-history-panel\').remove()">&times;</button>',
+    '</div>',
+    '<div class="ra-history-list">', paste(items, collapse = ""), '</div>',
+    '</div>'))
+}
+
+
 # --- CSS ----------------------------------------------------------------------
 
 .chat_css <- function() {
@@ -325,6 +407,64 @@ addin_chat_close <- function() {
   }
   .ra-header-right {
     display: flex; align-items: center; gap: 4px;
+  }
+  .ra-header-center {
+    flex: 1; display: flex; justify-content: center;
+  }
+  .ra-model-select {
+    background: #313244; border: 1px solid #45475a;
+    color: #cdd6f4; padding: 4px 8px; border-radius: 6px;
+    font-size: 11px; outline: none; cursor: pointer;
+    min-width: 140px; max-width: 200px;
+  }
+  .ra-model-select:focus { border-color: #89b4fa; }
+  .ra-model-select option { background: #313244; color: #cdd6f4; }
+
+  /* History panel */
+  .ra-history-overlay {
+    position: absolute; top: 40px; left: 0; right: 0; bottom: 0;
+    background: #1e1e2e; z-index: 100;
+    display: flex; flex-direction: column;
+    animation: raSlide 0.2s ease;
+  }
+  @keyframes raSlide { from { opacity:0; transform:translateY(-10px); } to { opacity:1; } }
+  .ra-history-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: #181825;
+    border-bottom: 1px solid #313244;
+  }
+  .ra-history-header h4 {
+    margin: 0; font-size: 13px; color: #89b4fa;
+  }
+  .ra-history-close {
+    background: none; border: none; color: #6c7086;
+    cursor: pointer; font-size: 16px; padding: 4px;
+  }
+  .ra-history-close:hover { color: #cdd6f4; }
+  .ra-history-list {
+    flex: 1; overflow-y: auto; padding: 12px;
+  }
+  .ra-history-item {
+    padding: 8px 12px; margin-bottom: 8px;
+    background: #24283b; border: 1px solid #313244;
+    border-radius: 8px; font-size: 12px;
+  }
+  .ra-history-item .ra-hist-role {
+    font-size: 10px; color: #89b4fa; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .ra-history-item .ra-hist-role.assistant { color: #a6e3a1; }
+  .ra-history-item .ra-hist-time {
+    font-size: 10px; color: #585b70; float: right;
+  }
+  .ra-history-item .ra-hist-text {
+    color: #cdd6f4; line-height: 1.4;
+    max-height: 60px; overflow: hidden;
+    word-wrap: break-word; white-space: pre-wrap;
+  }
+  .ra-history-empty {
+    text-align: center; color: #585b70; padding: 40px 20px;
+    font-size: 13px;
   }
   .ra-hbtn {
     background: none; border: 1px solid transparent;
@@ -494,7 +634,7 @@ addin_chat_close <- function() {
 
 # --- HTML Structure -----------------------------------------------------------
 
-.chat_html <- function(model, init_sel) {
+.chat_html <- function(model, init_sel, provider = "deepseek") {
   paste0('
   <div class="ra-wrap">
     <!-- Header -->
@@ -506,7 +646,16 @@ addin_chat_close <- function() {
         </svg>
         <span class="ra-header-title">R Assistant</span>
       </div>
+      <div class="ra-header-center">
+        <select id="ra_model_select" class="ra-model-select">
+          ', .html_model_options(provider, model), '
+        </select>
+      </div>
       <div class="ra-header-right">
+        <button class="ra-hbtn" id="ra_btn_history" title="View conversation history"
+                onclick="Shiny.setInputValue(\'ra_btn_history\', Math.random())">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 0a8 8 0 100 16A8 8 0 008 0zm.5 4.75a.75.75 0 00-1.5 0v3.5a.75.75 0 00.37.65l2.5 1.5a.75.75 0 10.76-1.3L8.5 7.94V4.75z"/></svg>
+        </button>
         <button class="ra-hbtn" id="ra_btn_new" title="New conversation"
                 onclick="Shiny.setInputValue(\'ra_btn_new\', Math.random())">
           <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
@@ -561,6 +710,10 @@ addin_chat_close <- function() {
     $(document).on("input", "#ra_input", function() {
       this.style.height = "auto";
       this.style.height = Math.min(this.scrollHeight, 80) + "px";
+    });
+    // Model select change
+    $(document).on("change", "#ra_model_select", function() {
+      Shiny.setInputValue("ra_model_change", $(this).val());
     });
   </script>
   ')
