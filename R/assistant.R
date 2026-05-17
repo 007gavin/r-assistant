@@ -84,7 +84,18 @@
     base_url <- config$base_url
   }
 
-  url <- paste0(base_url, provider_cfg$chat_path)
+  # Build final URL - prevent double path
+  # If base_url already ends with chat_path, don't append again
+  if (grepl(paste0(provider_cfg$chat_path, "$"), base_url)) {
+    url <- base_url
+  } else if (grepl("/v1$", base_url)) {
+    url <- paste0(base_url, provider_cfg$chat_path)
+  } else if (grepl("/v1/$", base_url)) {
+    url <- paste0(sub("/$", "", base_url), provider_cfg$chat_path)
+  } else {
+    # base_url might be just the domain, append /v1 + chat_path
+    url <- paste0(sub("/$", "", base_url), provider_cfg$chat_path)
+  }
 
   body <- build_request_body(
     provider_name = provider_name,
