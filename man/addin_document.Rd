@@ -7,5 +7,5 @@
 addin_document()
 }
 \description{
-Generate documentation for selected function.
+Document Code Addin
 }

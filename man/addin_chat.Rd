@@ -2,14 +2,15 @@
 % Please edit documentation in R/addin.R
 \name{addin_chat}
 \alias{addin_chat}
-\title{RStudio Addins for R Assistant}
+\title{Open the R Assistant chat panel in RStudio}
 \usage{
-addin_chat()
+addin_chat(viewer = TRUE)
+}
+\arguments{
+\item{viewer}{Logical. If TRUE (default), open in RStudio Viewer pane.
+If FALSE, open in the system browser.}
 }
 \description{
-Interactive Shiny gadgets that integrate with RStudio's Addin menu.
-Chat Addin - Interactive conversation with the AI
-}
-\details{
-Opens a chat panel as an RStudio gadget.
+Launches an interactive AI chat in the RStudio Viewer pane.
+The panel can be dragged to the left side to match Posit Assistant layout.
 }

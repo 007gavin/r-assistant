@@ -7,5 +7,5 @@
 addin_fix()
 }
 \description{
-Fix selected code or the last error.
+Fix Code Addin
 }

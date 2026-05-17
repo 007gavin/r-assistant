@@ -7,5 +7,5 @@
 addin_explain()
 }
 \description{
-Explain selected code in the RStudio editor.
+Explain Code Addin
 }

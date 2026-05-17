@@ -7,5 +7,5 @@
 addin_refactor()
 }
 \description{
-Refactor selected code.
+Refactor Code Addin
 }
