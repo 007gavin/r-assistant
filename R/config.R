@@ -68,6 +68,12 @@ assistant_get_config <- function() {
   config
 }
 
+#' Set full configuration (internal use)
+#' @noRd
+assistant_set_config <- function(...) {
+  config <- list(...)
+  save_config(config)
+}
 
 #' Default system prompt for R programming assistance
 #' @noRd

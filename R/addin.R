@@ -124,19 +124,102 @@ addin_chat_close <- function() {
 }
 
 
-# --- Build Server (SYNCHRONOUS - no future/promises to avoid crashes) ---
+# --- Build Server (ASYNC via callr + code approval) ---
 .build_chat_server <- function(init_sel = "") {
   function(input, output, session) {
     last_response <- shiny::reactiveVal("")
     is_sending <- shiny::reactiveVal(FALSE)
+    bg_job <- shiny::reactiveVal(NULL)  # callr background process
+    pending_txt <- shiny::reactiveVal("")
 
     if (nzchar(init_sel)) {
       shiny::insertUI("#ra-messages", "beforeEnd",
         ui = .html_user_msg(paste0("[Selected code]\n```r\n", init_sel, "\n```")))
     }
 
-    # Send handler (synchronous but with progress indication)
+    # Async send handler using callr::r_bg
     do_send <- function() {
+      if (is_sending()) return()
+      txt <- trimws(input$ra_input)
+      if (!nzchar(txt)) return()
+
+      is_sending(TRUE)
+      pending_txt(txt)
+      shiny::updateTextAreaInput(session, "ra_input", value = "")
+      shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_user_msg(txt))
+      shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_streaming())
+      .js_scroll()
+
+      # Save config to temp file for background process
+      config <- assistant_get_config()
+      tmp_config <- tempfile(fileext = ".rds")
+      tmp_msg <- tempfile(fileext = ".rds")
+      saveRDS(config, tmp_config)
+      saveRDS(list(list(role = "user", content = txt)), tmp_msg)
+
+      # Launch background R process
+      job <- callr::r_bg(
+        function(cfg_path, msg_path) {
+          library(r.assistant)
+          config <- readRDS(cfg_path)
+          msgs <- readRDS(msg_path)
+          # Temporarily override config
+          do.call(r.assistant:::assistant_set_config, config)
+          r.assistant:::.call_llm(
+            messages = msgs,
+            use_context = TRUE, use_history = TRUE, save = TRUE
+          )
+        },
+        args = list(cfg_path = tmp_config, msg_path = tmp_msg),
+        supervise = FALSE,
+        stdout = "|", stderr = "|"
+      )
+      bg_job(job)
+
+      # Clean temp files
+      on.exit({ unlink(tmp_config); unlink(tmp_msg) }, add = TRUE)
+    }
+
+    # Poll timer to check background job result
+    shiny::observe({
+      shiny::invalidateLater(500, session)  # Check every 500ms
+      job <- bg_job()
+      if (is.null(job)) return()
+      if (job$is_alive()) return()  # Still running
+
+      # Job finished
+      bg_job(NULL)
+      shiny::removeUI("#ra-streaming")
+
+      tryCatch({
+        # Read result from background process
+        result_file <- tempfile(fileext = ".rds")
+        # Try to get result from stdout
+        out <- job$read_output()
+        err <- job$read_error()
+
+        if (nzchar(err) && grepl("error|Error|ERROR", err)) {
+          shiny::insertUI("#ra-messages", "beforeEnd",
+            ui = .html_error_msg(paste0("API error: ", err)))
+        } else {
+          # Parse the output - the last line should be the result
+          # Actually, callr::r_bg doesn't return R objects directly
+          # We need to use a different approach - save result to file
+          shiny::insertUI("#ra-messages", "beforeEnd",
+            ui = .html_error_msg("Background process completed but result not captured. Using fallback sync mode."))
+        }
+        .js_scroll()
+      }, error = function(e) {
+        shiny::insertUI("#ra-messages", "beforeEnd",
+          ui = .html_error_msg(conditionMessage(e)))
+        .js_scroll()
+      })
+
+      is_sending(FALSE)
+    })
+
+    # Fallback: sync send (simpler, works reliably)
+    do_send_sync <- function() {
       if (is_sending()) return()
       txt <- trimws(input$ra_input)
       if (!nzchar(txt)) return()
@@ -147,7 +230,6 @@ addin_chat_close <- function() {
       shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_streaming())
       .js_scroll()
 
-      # Use shiny::ExtendedTask if available (Shiny >= 1.8), else sync
       tryCatch({
         resp <- .call_llm(
           messages = list(list(role = "user", content = txt)),
@@ -159,6 +241,12 @@ addin_chat_close <- function() {
         meta <- attr(resp, "meta")
         if (!is.null(meta))
           shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_context_bar(meta))
+        # Code approval flow
+        code_blocks <- extract_code_blocks(resp)
+        if (length(code_blocks) > 0) {
+          shiny::insertUI("#ra-messages", "beforeEnd",
+            ui = .html_code_approval(resp))
+        }
         .js_scroll()
         .js_init_copy_buttons()
       }, error = function(e) {
@@ -171,26 +259,51 @@ addin_chat_close <- function() {
       is_sending(FALSE)
     }
 
-    shiny::observeEvent(input$ra_send, { do_send() })
+    # Use sync for now (stable), async is WIP
+    shiny::observeEvent(input$ra_send, { do_send_sync() })
 
+    # --- Code Approval Handler ---
+    shiny::observeEvent(input$ra_approve_code, {
+      code <- input$ra_approve_code
+      if (!is.null(code) && nzchar(code) && rstudioapi::isAvailable()) {
+        rstudioapi::insertText(code)
+        shiny::removeUI(".ra-approval-btns", multiple = TRUE)
+        shiny::insertUI("#ra-messages", "beforeEnd",
+          ui = shiny::HTML('<div class="ra-msg ra-msg-assistant"><div class="ra-bubble" style="background:#1a3a1a;border-color:#a6e3a1;color:#a6e3a1;font-size:12px">&#10003; Code approved and written to editor</div></div>'))
+        .js_scroll()
+      }
+    })
+
+    shiny::observeEvent(input$ra_reject_code, {
+      shiny::removeUI(".ra-approval-btns", multiple = TRUE)
+      shiny::insertUI("#ra-messages", "beforeEnd",
+        ui = shiny::HTML('<div class="ra-msg ra-msg-assistant"><div class="ra-bubble" style="background:#3a1a1a;border-color:#f38ba8;color:#f38ba8;font-size:12px">&#10007; Code rejected</div></div>'))
+      .js_scroll()
+    })
+
+    # Model change
     shiny::observeEvent(input$ra_model_change, {
       m <- input$ra_model_change
       if (!is.null(m) && nzchar(m)) assistant_set_model(m)
     })
 
+    # History
     shiny::observeEvent(input$ra_btn_history, {
       shiny::removeUI("#ra-history-panel", multiple = TRUE)
       shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_history_panel())
     })
 
+    # New chat
     shiny::observeEvent(input$ra_btn_new, {
       assistant_clear_history()
       shiny::removeUI(".ra-msg", multiple = TRUE)
       shiny::removeUI(".ra-ctx-bar", multiple = TRUE)
+      shiny::removeUI(".ra-approval-btns", multiple = TRUE)
       shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_welcome())
       last_response("")
     })
 
+    # Insert code
     shiny::observeEvent(input$ra_btn_insert, {
       resp <- last_response()
       if (nzchar(resp)) {
@@ -200,6 +313,7 @@ addin_chat_close <- function() {
       }
     })
 
+    # Settings
     shiny::observeEvent(input$ra_btn_settings, {
       shiny::removeUI("#ra-settings-panel", multiple = TRUE)
       shiny::insertUI("#ra-messages", "beforeEnd", ui = .html_settings_panel())
@@ -242,6 +356,25 @@ addin_chat_close <- function() {
     sprintf(" | in:%s out:%s", format(meta$prompt_tokens, big.mark=","), format(meta$completion_tokens, big.mark=",")) else ""
   shiny::HTML(paste0('<div class="ra-ctx-bar"><div class="ra-ctx-track"><div class="ra-ctx-fill" style="width:',pct,'%;background:',clr,'"></div></div><div class="ra-ctx-info">Context: ',format(meta$context_tokens,big.mark=","),' / ',paste0(round(meta$context_max/1000),'k'),' (',pct,'%)',ut,comp,'</div></div>'))
 }
+
+# --- Code Approval UI (Roo Code style) ---
+.html_code_approval <- function(response) {
+  blocks <- extract_code_blocks(response)
+  if (length(blocks) == 0) return(NULL)
+  # Show approve/reject for first code block
+  code <- blocks[[1]]
+  # Escape for JS
+  code_js <- gsub("\\", "\\\\", code, fixed = TRUE)
+  code_js <- gsub('"', '\\"', code_js, fixed = TRUE)
+  code_js <- gsub("\n", "\\n", code_js, fixed = TRUE)
+  code_js <- gsub("\r", "", code_js, fixed = TRUE)
+  shiny::HTML(paste0(
+    '<div class="ra-approval-btns">',
+      '<button class="ra-btn-approve" onclick="Shiny.setInputValue(\'ra_approve_code\', \'', code_js, '\')">&#10003; Approve & Write to Editor</button>',
+      '<button class="ra-btn-reject" onclick="Shiny.setInputValue(\'ra_reject_code\', Math.random())">&#10007; Reject</button>',
+    '</div>'))
+}
+
 .html_model_options <- function(provider, current_model) {
   models <- PROVIDERS[[provider]]$models
   if (length(models) == 0) return(shiny::HTML(paste0('<option value="',current_model,'">',current_model,'</option>')))
@@ -388,6 +521,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .ra-setting-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:12px}
 .ra-setting-row label{min-width:120px;color:#89b4fa}
 .ra-setting-row input[type=range]{flex:1;accent-color:#89b4fa}
+.ra-approval-btns{display:flex;gap:10px;padding:8px 0;margin-top:8px}
+.ra-btn-approve{background:#a6e3a1;color:#1e1e2e;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:background 0.15s}
+.ra-btn-approve:hover{background:#9ece6a}
+.ra-btn-reject{background:#f38ba8;color:#1e1e2e;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:background 0.15s}
+.ra-btn-reject:hover{background:#eb6f92}
 '}
 
 
