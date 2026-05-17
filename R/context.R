@@ -16,7 +16,7 @@
 #' @param max_vars Integer. Max number of variables to describe.
 #'
 #' @return A list with context fields.
-#' @importFrom utils capture.output head object.size str tail menu
+#' @importFrom utils browseURL capture.output head object.size str tail menu
 #' @importFrom stats setNames
 #' @importFrom rstudioapi getActiveDocumentContext isAvailable
 #' @export

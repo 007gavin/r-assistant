@@ -8,13 +8,14 @@
 .chat_app_env <- new.env(parent = emptyenv())
 .chat_app_env$running <- FALSE
 .chat_app_env$port <- 28100
+.chat_app_env$process <- NULL
 
 # --- Chat Addin ---
 
 #' Open the R Assistant chat panel in RStudio
 #'
 #' Launches an interactive AI chat in the RStudio Viewer pane.
-#' The panel can be dragged to the left side to match Posit Assistant layout.
+#' Runs as a background process so the Console remains free.
 #'
 #' @param viewer Logical. If TRUE (default), open in RStudio Viewer pane.
 #'   If FALSE, open in the system browser.
@@ -24,49 +25,100 @@ addin_chat <- function(viewer = TRUE) {
     stop("This addin requires the 'shiny' package.")
   }
 
+  # Kill existing instance if running
+  if (!is.null(.chat_app_env$process) && .chat_app_env$process$is_alive()) {
+    .chat_app_env$process$kill()
+    Sys.sleep(0.3)
+  }
+
+  port <- .chat_app_env$port
+
   # Get initial selection as context
-  init_msg <- ""
+  init_sel <- ""
   if (rstudioapi::isAvailable()) {
     tryCatch({
       ctx <- rstudioapi::getActiveDocumentContext()
       sel <- ctx$selection[[1]]$text
-      if (nzchar(trimws(sel))) {
-        init_msg <- sel
-      }
+      if (nzchar(trimws(sel))) init_sel <- sel
     }, error = function(e) {})
   }
 
-  # Build UI
-  ui <- .build_chat_ui(init_msg)
+  # Save config for the background process to read
+  config <- assistant_get_config()
+  config_path <- file.path(tempdir(), "ra_chat_init.rds")
+  saveRDS(list(init_sel = init_sel, config = config), config_path)
 
-  # Build server
-  server <- .build_chat_server(init_msg)
+  # Write the background app launcher script
+  script_path <- file.path(tempdir(), "ra_chat_launcher.R")
+  writeLines(con = script_path, c(
+    paste0("options(shiny.port = ", port, ")"),
+    "library(shiny)",
+    "library(r.assistant)",
+    paste0("init <- readRDS('", gsub("\\\\", "/", config_path), "')"),
+    "ui <- r.assistant:::.build_chat_ui(init$init_sel)",
+    "server <- r.assistant:::.build_chat_server(init$init_sel)",
+    "runApp(shinyApp(ui, server), port = getOption('shiny.port'), launch.browser = FALSE)"
+  ))
 
-  # Launch
-  app <- shiny::shinyApp(ui, server)
-
-  if (viewer && rstudioapi::isAvailable()) {
-    tryCatch({
-      shiny::runApp(app, port = .chat_app_env$port,
-                    launch.browser = rstudioapi::viewer)
-    }, error = function(e) {
-      shiny::runApp(app, port = .chat_app_env$port)
-    })
-  } else {
-    shiny::runApp(app, port = .chat_app_env$port)
+  # Find Rscript executable
+  rscript <- file.path(R.home("bin"), "Rscript.exe")
+  if (!file.exists(rscript)) {
+    rscript <- file.path(R.home("bin"), "x64", "Rscript.exe")
   }
+  if (!file.exists(rscript)) {
+    rscript <- Sys.which("Rscript")
+  }
+
+  # Launch as background process
+  .chat_app_env$process <- processx::process$new(
+    command = rscript,
+    args = script_path,
+    supervise = FALSE,
+    stdout = "|",
+    stderr = "|"
+  )
+
+  .chat_app_env$running <- TRUE
+
+  # Wait for server to be ready (max 10s)
+  url <- paste0("http://127.0.0.1:", port)
+  ready <- FALSE
+  for (i in 1:50) {
+    Sys.sleep(0.2)
+    tryCatch({
+      con <- url(url, open = "r", timeout = 1)
+      close(con)
+      ready <- TRUE
+      break
+    }, error = function(e) {})
+  }
+
+  if (ready && viewer && rstudioapi::isAvailable()) {
+    tryCatch({
+      rstudioapi::viewer(url, height = "maximize")
+    }, error = function(e) {
+      browseURL(url)
+    })
+  } else if (ready) {
+    browseURL(url)
+  }
+
+  message("[R Assistant] Chat running at ", url, " (Console is free)")
+  message("[R Assistant] To stop: addin_chat_close()")
+  invisible(url)
 }
 
 #' Close the chat panel
 #' @export
 addin_chat_close <- function() {
-  tryCatch({
-    if (rstudioapi::isAvailable()) {
-      rstudioapi::executeCommand("closeAllSourceDocs")
-    }
-  }, error = function(e) {})
+  if (!is.null(.chat_app_env$process) && .chat_app_env$process$is_alive()) {
+    .chat_app_env$process$kill()
+    message("[R Assistant] Chat closed.")
+  } else {
+    message("[R Assistant] No active chat session.")
+  }
   .chat_app_env$running <- FALSE
-  message("R Assistant chat closed.")
+  .chat_app_env$process <- NULL
 }
 
 

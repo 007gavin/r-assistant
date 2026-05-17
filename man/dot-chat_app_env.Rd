@@ -5,7 +5,7 @@
 \alias{.chat_app_env}
 \title{RStudio Addins for R Assistant}
 \format{
-An object of class \code{environment} of length 2.
+An object of class \code{environment} of length 3.
 }
 \usage{
 .chat_app_env

@@ -12,5 +12,5 @@ If FALSE, open in the system browser.}
 }
 \description{
 Launches an interactive AI chat in the RStudio Viewer pane.
-The panel can be dragged to the left side to match Posit Assistant layout.
+Runs as a background process so the Console remains free.
 }
