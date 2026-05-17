@@ -340,7 +340,27 @@ addin_chat_close <- function() {
   shiny::HTML(paste0('<div class="ra-msg ra-msg-user"><div class="ra-msg-meta">You</div><div class="ra-bubble ra-bubble-user">', shiny::HTML(text), '</div></div>'))
 }
 .html_assistant_msg <- function(text) {
-  shiny::HTML(paste0('<div class="ra-msg ra-msg-assistant"><div class="ra-msg-meta">Assistant</div><div class="ra-bubble ra-bubble-assistant">', .md_to_html(text), '</div></div>'))
+  thinking <- attr(text, "thinking")
+  thinking_html <- ""
+  if (!is.null(thinking) && nzchar(thinking)) {
+    # Collapsible thinking block
+    thinking_html <- paste0(
+      '<details class="ra-thinking-block">',
+        '<summary class="ra-thinking-header">',
+          '<span class="ra-thinking-icon">&#128161;</span> ',
+          'Thinking process',
+          '<span class="ra-thinking-toggle">&#9654;</span>',
+        '</summary>',
+        '<div class="ra-thinking-content">', .md_to_html(thinking), '</div>',
+      '</details>'
+    )
+  }
+  shiny::HTML(paste0(
+    '<div class="ra-msg ra-msg-assistant">',
+      '<div class="ra-msg-meta">Assistant</div>',
+      thinking_html,
+      '<div class="ra-bubble ra-bubble-assistant">', .md_to_html(text), '</div>',
+    '</div>'))
 }
 .html_streaming <- function() {
   shiny::HTML('<div class="ra-msg ra-msg-assistant" id="ra-streaming"><div class="ra-thinking"><span class="ra-dot"></span><span class="ra-dot"></span><span class="ra-dot"></span><span style="margin-left:6px;opacity:0.6">Thinking...</span></div></div>')
@@ -526,6 +546,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .ra-btn-approve:hover{background:#9ece6a}
 .ra-btn-reject{background:#f38ba8;color:#1e1e2e;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:background 0.15s}
 .ra-btn-reject:hover{background:#eb6f92}
+.ra-thinking-block{margin-bottom:8px;border:1px solid #313244;border-radius:8px;overflow:hidden;background:#11111b}
+.ra-thinking-header{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;color:#89b4fa;background:#181825;user-select:none;list-style:none}
+.ra-thinking-header::-webkit-details-marker{display:none}
+.ra-thinking-header:hover{background:#1f1f33}
+.ra-thinking-icon{font-size:14px}
+.ra-thinking-toggle{margin-left:auto;font-size:10px;transition:transform 0.2s}
+details[open] .ra-thinking-toggle{transform:rotate(90deg)}
+.ra-thinking-content{padding:10px 12px;font-size:12px;color:#a6adc8;line-height:1.5;max-height:400px;overflow-y:auto;border-top:1px solid #313244}
+.ra-thinking-content::-webkit-scrollbar{width:4px}
+.ra-thinking-content::-webkit-scrollbar-thumb{background:#45475a;border-radius:2px}
 '}
 
 

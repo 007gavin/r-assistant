@@ -165,10 +165,31 @@ build_request_body <- function(provider_name, model, messages,
 #' @noRd
 parse_response <- function(provider_name, resp) {
   if (provider_name == "anthropic") {
-    resp$content[[1]]$text
+    # Anthropic: check for thinking blocks
+    thinking <- NULL
+    answer <- NULL
+    for (block in resp$content) {
+      if (block$type == "thinking") {
+        thinking <- block$thinking
+      } else if (block$type == "text") {
+        answer <- block$text
+      }
+    }
+    result <- answer %||% resp$content[[1]]$text
+    if (!is.null(thinking)) attr(result, "thinking") <- thinking
+    result
   } else {
-    # OpenAI-compatible
-    resp$choices[[1]]$message$content
+    # OpenAI-compatible (deepseek, siliconflow, openai, etc.)
+    msg <- resp$choices[[1]]$message
+    # DeepSeek R1 / V3 reasoning_content
+    thinking <- msg$reasoning_content %||% NULL
+    # Some providers use thinking_content
+    if (is.null(thinking)) thinking <- msg$thinking_content %||% NULL
+    result <- msg$content
+    if (!is.null(thinking) && nzchar(thinking)) {
+      attr(result, "thinking") <- thinking
+    }
+    result
   }
 }
 
