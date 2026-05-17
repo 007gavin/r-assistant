@@ -4,11 +4,7 @@
 \alias{addin_chat}
 \title{Open the R Assistant chat panel in RStudio}
 \usage{
-addin_chat(viewer = TRUE)
-}
-\arguments{
-\item{viewer}{Logical. If TRUE (default), open in RStudio Viewer pane.
-If FALSE, open in the system browser.}
+addin_chat()
 }
 \description{
 Launches an interactive AI chat in the RStudio Viewer pane.

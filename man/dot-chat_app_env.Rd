@@ -5,14 +5,13 @@
 \alias{.chat_app_env}
 \title{RStudio Addins for R Assistant}
 \format{
-An object of class \code{environment} of length 3.
+An object of class \code{environment} of length 2.
 }
 \usage{
 .chat_app_env
 }
 \description{
 Interactive chat panel that runs inside RStudio, similar to Posit Assistant.
-The chat panel opens in the IDE pane system (Viewer or browser),
-with a toolbar button for quick toggle.
+Uses async API calls for responsive UI.
 }
 \keyword{datasets}

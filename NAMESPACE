@@ -2,10 +2,6 @@
 
 export(addin_chat)
 export(addin_chat_close)
-export(addin_document)
-export(addin_explain)
-export(addin_fix)
-export(addin_refactor)
 export(assistant_ask)
 export(assistant_available_providers)
 export(assistant_chat)
