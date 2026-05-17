@@ -6,6 +6,7 @@
 .chat_app_env$process <- NULL
 
 # --- Chat Addin ---
+#' @export
 addin_chat <- function() {
   if (!requireNamespace("shiny", quietly = TRUE))
     stop("This addin requires the 'shiny' package.")
@@ -87,6 +88,7 @@ addin_chat <- function() {
   invisible(url)
 }
 
+#' @export
 addin_chat_close <- function() {
   if (!is.null(.chat_app_env$process) && .chat_app_env$process$is_alive()) {
     .chat_app_env$process$kill()
@@ -268,9 +270,13 @@ addin_chat_close <- function() {
 
 
 # --- Other Addins ---
+#' @export
 addin_explain <- function() { code <- .get_selection_or_stop(); result <- assistant_explain(code); if (rstudioapi::isAvailable()) tryCatch(.show_result_viewer("Explanation", result), error=function(e){}) }
+#' @export
 addin_refactor <- function() { code <- .get_selection_or_stop(); .offer_code_insertion(assistant_refactor(code)) }
+#' @export
 addin_fix <- function() { code <- NULL; error <- NULL; if (rstudioapi::isAvailable()) { tryCatch({ctx<-rstudioapi::getActiveDocumentContext();sel<-ctx$selection[[1]]$text;if(nzchar(trimws(sel)))code<-sel},error=function(e){}); tryCatch({error<-geterrmessage();if(!nzchar(error))error<-NULL},error=function(e){}) }; if(is.null(code))stop("Select code first."); .offer_code_insertion(assistant_fix(code, error)) }
+#' @export
 addin_document <- function() { code <- .get_selection_or_stop(); .offer_code_insertion(assistant_document(code), insert_before=TRUE) }
 
 
