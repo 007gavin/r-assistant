@@ -31,7 +31,19 @@ addin_chat <- function(viewer = TRUE) {
     Sys.sleep(0.3)
   }
 
-  port <- .chat_app_env$port
+  # Find a free port (random each time)
+  port <- {
+    found <- NA
+    for (p in sample(49152:65535, 100)) {
+      tryCatch({
+        con <- serverSocket(p)
+        close(con)
+        found <- p
+        break
+      }, error = function(e) {})
+    }
+    if (is.na(found)) 28100 else found
+  }
 
   # Get initial selection as context
   init_sel <- ""
