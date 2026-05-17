@@ -69,14 +69,24 @@ addin_chat <- function(viewer = TRUE) {
     rscript <- Sys.which("Rscript")
   }
 
-  # Launch as background process
-  .chat_app_env$process <- processx::process$new(
-    command = rscript,
-    args = script_path,
-    supervise = FALSE,
-    stdout = "|",
-    stderr = "|"
-  )
+  # On Windows, use cmd.exe to launch Rscript to avoid segfault from bash
+  if (Sys.info()["sysname"] == "Windows") {
+    .chat_app_env$process <- processx::process$new(
+      command = "cmd.exe",
+      args = c("/c", rscript, script_path),
+      supervise = FALSE,
+      stdout = "|",
+      stderr = "|"
+    )
+  } else {
+    .chat_app_env$process <- processx::process$new(
+      command = rscript,
+      args = script_path,
+      supervise = FALSE,
+      stdout = "|",
+      stderr = "|"
+    )
+  }
 
   .chat_app_env$running <- TRUE
 
