@@ -139,8 +139,14 @@ remotes::<span class="cf">install_github</span>(<span class="cs">"007gavin/r-ass
 </section>
 
 <section id="viewer"><h2>6. Viewer 面板聊天</h2>
-<pre><code><span class="cf">addin_chat</span>()          <span class="cc"># 打开聊天面板</span>
+<pre><code><span class="cf">addin_chat</span>()          <span class="cc"># 启动聊天（后台运行，Console 空闲）</span>
 <span class="cf">addin_chat_close</span>()    <span class="cc"># 关闭</span></code></pre>
+<div class="box bw"><div class="bt">手动打开 Viewer</div>
+<p><code>addin_chat()</code> 启动后会显示一个 URL（如 <code>http://127.0.0.1:54321</code>）。</p>
+<p>如果 Viewer 面板没有自动打开，复制该 URL 并执行：</p>
+<pre><code><span class="cf">rstudioapi::viewer</span>(<span class="cs">"http://127.0.0.1:54321"</span>)  <span class="cc"># 替换为实际端口号</span></code></pre>
+<p>每次启动端口号不同，请以控制台显示的 URL 为准。</p>
+</div>
 <div class="g">
     <div class="cd"><h4>模型选择器</h4><p>顶部下拉框，点击切换 LLM 模型</p></div>
     <div class="cd"><h4>历史按钮</h4><p>时钟图标，查看对话历史</p></div>

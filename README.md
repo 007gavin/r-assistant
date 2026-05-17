@@ -59,12 +59,18 @@ assistant_get_config()
 ### 2. 使用 Viewer 面板聊天
 
 ```r
-# 打开聊天面板（在 RStudio Viewer 面板中显示，Console 完全空闲）
+# 启动聊天（后台运行，Console 空闲）
 addin_chat()
+
+# 如果 Viewer 面板没有自动打开，手动执行：
+rstudioapi::viewer("http://127.0.0.1:端口号")
+# 端口号会在 addin_chat() 启动后显示，例如：Chat at http://127.0.0.1:54321
 
 # 关闭聊天
 addin_chat_close()
 ```
+
+> **注意**：`addin_chat()` 启动后会显示一个 URL（如 `http://127.0.0.1:54321`）。如果 Viewer 面板没有自动打开，请复制该 URL 并执行 `rstudioapi::viewer("http://127.0.0.1:54321")` 手动打开。每次启动端口号不同。
 
 聊天面板功能：
 - **模型选择器** — 顶部下拉框，点击切换 LLM 模型
