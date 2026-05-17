@@ -1,0 +1,24 @@
+# R package build artifacts
+*.tar.gz
+.Rcheck/
+*.Rcheck/
+
+# R session files
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+*.Rproj
+.vscode/
+
+# Build artifacts
+r.assistant_0.1.0.tar.gz
+
+# Temp
+*.tmp

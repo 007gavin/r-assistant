@@ -1,0 +1,24 @@
+Name: R Assistant Chat
+Description: Interactive AI chat for R programming assistance
+Binding: addin_chat
+Interactive: true
+
+Name: R Assistant: Explain Code
+Description: Explain selected R code using AI
+Binding: addin_explain
+Interactive: true
+
+Name: R Assistant: Refactor Code
+Description: Refactor selected R code using AI
+Binding: addin_refactor
+Interactive: true
+
+Name: R Assistant: Fix Code
+Description: Fix errors in selected R code using AI
+Binding: addin_fix
+Interactive: true
+
+Name: R Assistant: Generate Docs
+Description: Generate roxygen2 documentation for selected function
+Binding: addin_document
+Interactive: true

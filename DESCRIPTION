@@ -1,0 +1,28 @@
+Package: r.assistant
+Title: AI-Powered Programming Assistant for R
+Version: 0.1.0
+Authors@R: 
+    person("Gavin", role = c("aut", "cre"),
+           email = "gavin@example.com")
+Description: An AI-powered coding assistant for R and RStudio, similar to 
+    Posit Assistant. Supports code generation, explanation, refactoring, 
+    error diagnosis, and documentation via configurable LLM APIs (OpenAI, 
+    Anthropic, DeepSeek, and any OpenAI-compatible endpoint). Includes 
+    RStudio addins for interactive chat, inline code completion, and 
+    context-aware assistance.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    httr2 (>= 1.0.0),
+    jsonlite (>= 1.8.0),
+    rstudioapi (>= 0.15.0),
+    miniUI (>= 0.1.1.1),
+    shiny (>= 1.7.0),
+    clipr (>= 0.8.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
