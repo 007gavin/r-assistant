@@ -64,7 +64,7 @@ PROVIDERS <- list(
     default_model = "Qwen/Qwen3-32B",
     api_key_env = "SILICONFLOW_API_KEY",
     chat_path = "/chat/completions",
-    max_context = 131072,
+    max_context = 1000000,
     header_fn = function(key) c("Authorization" = paste("Bearer", key))
   ),
   openai = list(
