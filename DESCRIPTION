@@ -1,6 +1,6 @@
 Package: r.assistant
 Title: AI-Powered Programming Assistant for R
-Version: 0.9.0
+Version: 1.0.0
 Authors@R: 
     person("Gavin", role = c("aut", "cre"),
            email = "gavin@example.com")
@@ -21,7 +21,6 @@ Imports:
     miniUI (>= 0.1.1.1),
     shiny (>= 1.7.0),
     clipr (>= 0.8.0),
-    processx (>= 3.8.0),
 Suggests:
     testthat (>= 3.0.0),
     knitr,

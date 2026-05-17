@@ -3,7 +3,6 @@
 # --- Global state ---
 .chat_app_env <- new.env(parent = emptyenv())
 .chat_app_env$running <- FALSE
-.chat_app_env$process <- NULL
 
 # --- Chat Addin ---
 #' @export
@@ -43,20 +42,15 @@ addin_chat <- function() {
   ))
 
   rscript <- file.path(R.home("bin"), "Rscript.exe")
-  if (!file.exists(rscript)) rscript <- file.path(R.home("bin"), "x64", "Rscript.exe")
   if (!file.exists(rscript)) rscript <- Sys.which("Rscript")
 
-  # Launch background process
+  # Launch as background process using shell() on Windows
   if (Sys.info()["sysname"] == "Windows") {
-    .chat_app_env$process <- processx::process$new(
-      command = "cmd.exe", args = c("/c", rscript, script_path),
-      supervise = FALSE, stdout = "|", stderr = "|")
+    shell(paste0('start /B "" "', rscript, '" "', script_path, '"'), wait = FALSE)
   } else {
-    .chat_app_env$process <- processx::process$new(
-      command = rscript, args = script_path,
-      supervise = FALSE, stdout = "|", stderr = "|")
+    system(paste0(rscript, " ", script_path, " &"), wait = FALSE, intern = FALSE)
   }
-  .chat_app_env$running <- TRUE
+  .chat_app_env$port <- port
 
   url <- paste0("http://127.0.0.1:", port)
 
@@ -90,12 +84,25 @@ addin_chat <- function() {
 
 #' @export
 addin_chat_close <- function() {
-  if (!is.null(.chat_app_env$process) && .chat_app_env$process$is_alive()) {
-    .chat_app_env$process$kill()
+  port <- .chat_app_env$port
+  if (!is.null(port)) {
+    # Kill process using the port
+    if (Sys.info()["sysname"] == "Windows") {
+      tryCatch({
+        pid <- system(paste0("netstat -ano | findstr :", port, " | findstr LISTENING"),
+                      intern = TRUE)
+        if (length(pid) > 0) {
+          pid_num <- trimws(sub(".*LISTENING\\s+", "", pid[1]))
+          if (nzchar(pid_num)) {
+            system(paste0("taskkill /F /PID ", pid_num), intern = TRUE)
+          }
+        }
+      }, error = function(e) {})
+    }
     message("[R Assistant] Chat closed.")
   }
   .chat_app_env$running <- FALSE
-  .chat_app_env$process <- NULL
+  .chat_app_env$port <- NULL
 }
 
 .find_free_port <- function() {
