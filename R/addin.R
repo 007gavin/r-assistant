@@ -116,18 +116,27 @@ addin_chat <- function(viewer = TRUE) {
   }
 
   if (ready) {
-    tryCatch({
-      if (rstudioapi::isAvailable()) {
+    if (rstudioapi::isAvailable()) {
+      # Multiple attempts to open in Viewer pane
+      tryCatch({
+        # First focus the Viewer pane
+        rstudioapi::executeCommand("viewerFocus")
+        Sys.sleep(0.3)
+        # Then load the URL
         rstudioapi::viewer(url)
-        # Focus the Viewer pane
-        tryCatch(rstudioapi::executeCommand("viewerFocus"), error = function(e) {})
-      } else {
-        browseURL(url)
-      }
-    }, error = function(e) {
+        Sys.sleep(0.2)
+        # Focus again to ensure it's visible
+        rstudioapi::executeCommand("viewerFocus")
+      }, error = function(e) {
+        # Fallback: try browseURL
+        tryCatch({
+          browseURL(url)
+          message("[R Assistant] Opened in browser (Viewer pane unavailable).")
+        }, error = function(e2) {})
+      })
+    } else {
       browseURL(url)
-      message("[R Assistant] Could not open Viewer pane, opened in browser instead.")
-    })
+    }
   }
 
   message("[R Assistant] Chat running at ", url, " (Console is free)")

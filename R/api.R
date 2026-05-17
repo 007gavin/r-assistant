@@ -23,17 +23,45 @@ PROVIDERS <- list(
     name = "SiliconFlow",
     base_url = "https://api.siliconflow.cn/v1",
     models = c(
-      "Qwen/Qwen2.5-72B-Instruct",
-      "Qwen/Qwen2.5-32B-Instruct",
+      # Qwen3.6 (latest)
+      "Qwen/Qwen3.6-27B", "Qwen/Qwen3.6-35B-A3B",
+      # Qwen3.5
+      "Qwen/Qwen3.5-397B-A17B", "Qwen/Qwen3.5-122B-A10B",
+      "Qwen/Qwen3.5-27B", "Qwen/Qwen3.5-35B-A3B",
+      "Qwen/Qwen3.5-9B", "Qwen/Qwen3.5-4B",
+      # Qwen3
+      "Qwen/Qwen3-32B", "Qwen/Qwen3-14B", "Qwen/Qwen3-8B",
+      "Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      # Qwen2.5
+      "Qwen/Qwen2.5-72B-Instruct", "Qwen/Qwen2.5-72B-Instruct-128K",
+      "Qwen/Qwen2.5-32B-Instruct", "Qwen/Qwen2.5-14B-Instruct",
       "Qwen/Qwen2.5-7B-Instruct",
-      "deepseek-ai/DeepSeek-V3",
-      "deepseek-ai/DeepSeek-V2.5",
-      "THUDM/glm-4-9b-chat",
-      "internlm/internlm2_5-7b-chat",
-      "meta-llama/Meta-Llama-3.1-8B-Instruct",
-      "meta-llama/Meta-Llama-3.1-70B-Instruct"
+      # DeepSeek
+      "deepseek-ai/DeepSeek-V4-Flash", "deepseek-ai/DeepSeek-V3.2",
+      "deepseek-ai/DeepSeek-V3.1-Terminus", "deepseek-ai/DeepSeek-V3",
+      "deepseek-ai/DeepSeek-R1", "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+      # GLM
+      "THUDM/GLM-4-32B-0414", "THUDM/GLM-4-9B-0414", "THUDM/GLM-Z1-9B-0414",
+      "zai-org/GLM-4.5V", "zai-org/GLM-4.5-Air",
+      "Pro/zai-org/GLM-5.1", "Pro/zai-org/GLM-5", "Pro/zai-org/GLM-4.7",
+      # Kimi
+      "Pro/moonshotai/Kimi-K2.6", "Pro/moonshotai/Kimi-K2.5",
+      # MiniMax
+      "MiniMaxAI/MiniMax-M2.5", "Pro/MiniMaxAI/MiniMax-M2.5",
+      # Step
+      "stepfun-ai/Step-3.5-Flash",
+      # Tencent
+      "tencent/Hunyuan-A13B-Instruct",
+      # Others
+      "ByteDance-Seed/Seed-OSS-36B-Instruct",
+      "inclusionAI/Ling-flash-2.0", "inclusionAI/Ling-mini-2.0",
+      # Pro versions
+      "Pro/deepseek-ai/DeepSeek-V3.2", "Pro/deepseek-ai/DeepSeek-V3.1-Terminus",
+      "Pro/deepseek-ai/DeepSeek-V3", "Pro/deepseek-ai/DeepSeek-R1",
+      "Pro/Qwen/Qwen2.5-7B-Instruct"
     ),
-    default_model = "Qwen/Qwen2.5-72B-Instruct",
+    default_model = "Qwen/Qwen3-32B",
     api_key_env = "SILICONFLOW_API_KEY",
     chat_path = "/chat/completions",
     max_context = 131072,
